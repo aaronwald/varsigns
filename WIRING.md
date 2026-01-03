@@ -58,6 +58,43 @@ NodeMCU    │           │           │  │
                                       │
 ```
 
+### Option 3: With Logic Level Shifter (BEST for 24V LED Strips)
+
+```
+                           24V Power Supply
+                           ┌──────────────┐
+                           │   24V+  GND  │
+                           └───┬──────┬───┘
+                               │      │
+                    ┌──────────┴──┐   │
+                    │             │   │
+                ┌───┤ Buck Conv.  │   │
+                │   │ 24V→5V      │   │
+                │   │  (LM2596)   ├───┤
+                │   └─────────────┘   │
+                │   5V            GND │
+                │   │              │  │
+           ┌────┴───┴──┐           │  │
+           │    VIN    │           │  │
+NodeMCU    │   3.3V    │           │  │
+┌──────────┤    GND    ├───────────┴──┼──────┐
+│          └───────────┘              │      │
+│                                     │      │
+│              ┌───────────────┐      │      │
+│    3.3V ─────┤ VCCA     VCCB ├──────┘      │
+│              │               │   5V        │
+│    GND ──────┤ GND       GND ├─────────────┤
+│              │   TXB0104     │             │
+│  D4 ─────────┤ A1         B1 ├─────────────┼──→ LED Strip Data
+│              │               │             │
+│              └───────────────┘             │
+│                                            │
+└────────────────────────────────────────────┼──→ LED Strip GND
+                                             │
+                               24V ──────────┼──→ LED Strip V+
+                                             │
+```
+
 ## Connection Details
 
 ### Option 1: Separate Power Supplies
@@ -94,6 +131,29 @@ NodeMCU    │           │           │  │
 - Input: 24V, Output: 5V (adjustable)
 - Current rating: 2-3A minimum
 
+### Option 3: With TXB0104 Logic Level Shifter
+
+**TXB0104 Level Shifter Connections:**
+- **VCCA** ← 3.3V from NodeMCU
+- **VCCB** ← 5V from NodeMCU VIN or buck converter
+- **GND** ← Common ground (shared with NodeMCU and power supply)
+- **A1** ← NodeMCU D4 (GPIO2) - 3.3V side
+- **B1** → LED strip Data line - 5V side
+- **A2, A3, A4** ← Leave unconnected (not needed)
+
+**NodeMCU Connections:**
+- **VIN** ← 5V from buck converter or USB
+- **3.3V** → TXB0104 VCCA
+- **GND** ← Common ground
+- **D4 (GPIO2)** → TXB0104 A1 input
+
+**LED Strip Connections:**
+- **Data** ← From TXB0104 B1 output
+- **GND** ← Common ground
+- **V+** ← 24V from power supply
+
+**Note:** The TXB0104 is bidirectional and auto-detects signal direction. You only need one of its 4 channels for the data line.
+
 ## Safety Notes
 
 1. **Never connect 24V directly to NodeMCU** - The NodeMCU operates at 3.3V/5V. Only the LED strip gets 24V power. If using a buck converter, always verify the output voltage is 5V before connecting to the NodeMCU.
@@ -107,7 +167,11 @@ NodeMCU    │           │           │  │
 
 3. **Common ground is required** - The ground connection between NodeMCU and power supply is safe and necessary for proper data signal communication.
 
-4. **Data signal voltage** - NodeMCU outputs 3.3V logic levels. WS2811 chips typically work with 3.3V data signals, but if you experience issues, consider adding a logic level shifter (3.3V → 5V).
+4. **Logic Level Shifter REQUIRED** - The NodeMCU outputs 3.3V logic levels, but the WS2811 running on 24V needs a clean 5V data signal for reliable operation. Without a level shifter, you may experience incorrect colors (especially on the first LED) or intermittent issues.
+   - **Recommended**: 74HCT245 or similar 3.3V→5V logic level shifter
+   - **Alternative**: SN74AHCT125N single-gate buffer
+   - Connect: NodeMCU D4 → Level Shifter Input, Level Shifter Output → LED Data, 5V → Shifter VCC
+   - The 5V can come from NodeMCU VIN or a separate 5V source
 
 5. **Power supply sizing** - Ensure your 24V power supply can handle the current draw:
    - Each pixel can draw up to ~60mA at full white brightness

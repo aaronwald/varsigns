@@ -5,10 +5,10 @@
 
 // LED strip configuration
 #define LED_PIN D4  // GPIO2 on NodeMCU
-#define NUM_LEDS 90 // 18 pixels/meter * ~5 meters (16.4 feet)
+#define NUM_LEDS 40 // 40 WS2811 ICs (40 groups × 6 LEDs = 240 total LEDs)
 #define LED_TYPE WS2811
 #define COLOR_ORDER RGB
-#define BRIGHTNESS 128 // 0-255, adjust for desired brightness
+#define BRIGHTNESS 64 // 25% brightness (0-255)
 
 CRGB leds[NUM_LEDS];
 
@@ -58,18 +58,12 @@ void setup()
 
 void loop()
 {
-  // Create a flowing rainbow effect
-  static uint8_t hue = 0;
-
-  // Fill the LED array with rainbow colors
-  fill_rainbow(leds, NUM_LEDS, hue, 255 / NUM_LEDS);
+  // Set all LEDs to white
+  fill_solid(leds, NUM_LEDS, CRGB::White);
 
   // Show the LEDs
   FastLED.show();
 
-  // Increment hue for next frame (creates flowing effect)
-  hue++;
-
-  // Control animation speed (lower = faster)
-  delay(20);
+  // No need for frequent updates when showing static color
+  delay(100);
 }
